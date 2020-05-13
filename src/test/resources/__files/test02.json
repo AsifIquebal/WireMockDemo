@@ -1,0 +1,18 @@
+{
+  "gurus": [
+    {
+      "id": 1,
+      "name": "Johan Haleby",
+      "company": "Parkster",
+      "country": "Sweden",
+      "tool" : "Rest Assured"
+    },
+    {
+      "id": 2,
+      "name": "Tom Akehurst",
+      "company": "MockLab",
+      "country": "UK",
+      "tool" : "WireMock"
+    }
+  ]
+}

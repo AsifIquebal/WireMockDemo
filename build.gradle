@@ -1,0 +1,40 @@
+plugins {
+    id 'java'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation(group: 'org.testng', name: 'testng', version: '7.1.0')
+    testImplementation(group: 'io.rest-assured', name: 'rest-assured', version: '4.3.0')
+    testImplementation(group: 'com.jayway.jsonpath', name: 'json-path', version: '2.4.0')
+    testImplementation(group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.0')
+    testImplementation("com.github.tomakehurst:wiremock-jre8:2.26.3")
+    implementation(group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.2')
+    testImplementation(group: 'org.slf4j', name: 'slf4j-simple', version: '2.0.0-alpha1')
+    // lombok, also have a plugin flavour
+    compileOnly('org.projectlombok:lombok:1.18.12')
+    annotationProcessor('org.projectlombok:lombok:1.18.12')
+    testCompileOnly('org.projectlombok:lombok:1.18.12')
+    testAnnotationProcessor('org.projectlombok:lombok:1.18.12')
+}
+
+test {
+    useTestNG() {
+        useDefaultListeners = true
+        /*suites 'testng.xml'
+        outputDirectory = file("$projectDir/build/testNgReport")*/
+    }
+    reports.html.setDestination(file("$projectDir/build/gradleReport"))
+    testLogging.showStandardStreams = true
+    // set heap size for the test JVM(s)    minHeapSize = "128m"
+    maxHeapSize = "512m"
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
