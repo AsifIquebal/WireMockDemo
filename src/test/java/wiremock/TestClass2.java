@@ -81,6 +81,24 @@ public class TestClass2 {
         mockBase.printJson(response.asString());
     }
 
+    @Test
+    public void test04_getStubByIdPathParam(){
+        Response response = given()
+                .port(2345)
+                .when()
+                .get("/__admin/mappings")
+                .then()
+                .extract().response();
+        List<String> ids = JsonPath.read(response.asString(),"$.mappings.[*].id");
+        Response response1 = given().spec(mockBase.setRALogFilter())
+                .port(2345)
+                .pathParams("id",ids.get(0))
+                .when()
+                .get("/__admin/mappings/{id}")
+                .then()
+                .extract().response();
+    }
+
 
 
 
