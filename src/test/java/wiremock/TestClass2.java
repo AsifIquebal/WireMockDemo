@@ -1,10 +1,15 @@
 package wiremock;
 
+import com.github.tomakehurst.wiremock.http.ContentTypeHeader;
+import com.jayway.jsonpath.JsonPath;
 import io.restassured.response.Response;
 import lombok.extern.log4j.Log4j2;
+import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static io.restassured.RestAssured.given;
@@ -28,11 +33,10 @@ public class TestClass2 {
         mockBase.removeAllStub();
         mockBase.stopWireMockServer();
         mockBase.closePrintStream();
-
     }
 
     @Test
-    public void testForSpecificPort() {
+    public void test01_ForSpecificPort() {
         mockBase.getWireMockServer().stubFor(get(urlEqualTo("/emp/v2"))
                 .willReturn(aResponse()
                         .withBody("Employee 001 \nEmployee 002\n")
@@ -45,10 +49,40 @@ public class TestClass2 {
                 .then()
                 .extract()
                 .response();
-        System.out.println(response.getStatusLine());
         System.out.println(response.asString());
+        Assert.assertEquals(response.getStatusCode(), 200);
+    }
+
+    @Test
+    public void test02_Another(){
+        mockBase.getWireMockServer().stubFor(get(urlPathEqualTo("/all/gurus"))
+                .willReturn(aResponse()
+                        .withHeader(ContentTypeHeader.KEY, "application/json")
+                        .withBodyFile("test02.json")));
+        Response response = given().spec(mockBase.setRALogFilter())
+                .port(2345)
+                .when()
+                .get("/all/gurus")
+                .then()
+                .extract().response();
+        List<String> list = JsonPath.read(response.asString(),"$.gurus.[?(@.company=='Parkster')].country");
+        Assert.assertEquals(list.get(0),"Sweden");
 
     }
+
+    @Test
+    public void test03_ForStubMapping(){
+        Response response = given().spec(mockBase.setRALogFilter())
+                .port(2345)
+                .when()
+                .get("/__admin/mappings")
+                .then()
+                .extract().response();
+        mockBase.printJson(response.asString());
+    }
+
+
+
 
 
 }
