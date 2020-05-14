@@ -36,6 +36,7 @@ public class TestClass1 {
 
     @AfterClass
     public void tearDown() {
+        mockBase.removeAllStub();
         mockBase.stopWireMockServer();
         mockBase.closePrintStream();
     }
@@ -210,7 +211,6 @@ public class TestClass1 {
     public void testForDynamicPort() {
         //TODO
     }
-
 
 
     @Test

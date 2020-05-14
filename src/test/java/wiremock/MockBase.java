@@ -3,6 +3,8 @@ package wiremock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import com.jayway.jsonpath.JsonPath;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.LogDetail;
@@ -19,7 +21,9 @@ import org.testng.annotations.BeforeMethod;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.util.List;
 
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static io.restassured.RestAssured.given;
 
 @Log4j2
@@ -56,6 +60,14 @@ public class MockBase {
         log.info("Starting WireMockServer");
         wireMockServer = new WireMockServer();
         wireMockServer.start();
+        //return wireMockServer;
+    }
+
+    public void startWireMockServerOnThisPort(int port){
+        wireMockServer = new WireMockServer(wireMockConfig().port(port));
+        wireMockServer.start();
+        log.info("WireMock Started on Port: " + wireMockServer.port());
+        //return wireMockServer;
     }
 
     public void stopWireMockServer() {
@@ -97,6 +109,12 @@ public class MockBase {
         log.info("Finished Executing -> " + result.getMethod().getMethodName());
     }
 
+    public void startWireMockOnThisPort(int port){
+        wireMockServer = new WireMockServer(wireMockConfig().port(port));
+        wireMockServer.start();
+        log.info("Started WireMock on Port: " + wireMockServer.port());
+    }
+
     public void turnOffWiremockLogging() {
         System.setProperty("org.eclipse.jetty.util.log.class", "org.eclipse.jetty.util.log.StdErrLog");
         //System.setProperty("org.eclipse.jetty.util.log.class", "org.eclipse.jetty.util.log.Log");
@@ -119,4 +137,16 @@ public class MockBase {
         }
     }
 
+    public void removeAllStub() {
+        List<StubMapping> stubMappings = wireMockServer.getStubMappings();
+        log.info("Total Stub Found: " + stubMappings.size());
+        log.info("Removing Stubs...");
+        stubMappings.forEach(wireMockServer::removeStub);
+        //wireMockServer.removeStub();
+
+    }
+
+    public WireMockServer getWireMockServer() {
+        return wireMockServer;
+    }
 }
