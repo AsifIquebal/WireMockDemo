@@ -4,6 +4,8 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.http.ContentTypeHeader;
 import com.jayway.jsonpath.JsonPath;
+import io.restassured.http.Header;
+import io.restassured.http.Headers;
 import io.restassured.response.Response;
 import lombok.extern.log4j.Log4j2;
 import org.testng.Assert;
@@ -66,6 +68,12 @@ public class TestClass1 {
                 .queryParam("name", "Wiremock")
                 .get("/tool/mocking")
                 .then().log().headers().extract().response();
+        Headers headers = response.getHeaders();
+        for (Header header : headers) {
+            if(null!=header){
+                System.out.println("Header Name: " + header.getName() + ", Header Value: " + header.getValue());
+            }
+        }
         int num = JsonPath.read(response.asString(), "$.number");
         mockBase.printJson(response.asString());
         Assert.assertEquals(num, 123, "Failed: Number field mismatch");

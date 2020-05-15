@@ -10,7 +10,7 @@ pipeline {
                             echo "it's Windows"
                             bat 'mvn clean'
                         } else {
-                            echo "it's unix/max"
+                            echo "it's unix/mac"
                             sh 'mvn clean'
                         }
                     }

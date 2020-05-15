@@ -92,9 +92,9 @@ public class TestClass2 {
         List<String> ids = JsonPath.read(response.asString(),"$.mappings.[*].id");
         Response response1 = given().spec(mockBase.setRALogFilter())
                 .port(2345)
-                .pathParams("id",ids.get(0))
+                .pathParams("pathParam1",ids.get(0))
                 .when()
-                .get("/__admin/mappings/{id}")
+                .get("/__admin/mappings/{pathParam1}")
                 .then()
                 .extract().response();
     }

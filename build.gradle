@@ -26,7 +26,9 @@ dependencies {
 
 test {
     useTestNG() {
-        useDefaultListeners = true
+        preserveOrder true
+        useDefaultListeners true
+        groupByInstances = true
         /*suites 'testng.xml'
         outputDirectory = file("$projectDir/build/testNgReport")*/
     }
