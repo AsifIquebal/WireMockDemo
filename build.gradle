@@ -25,6 +25,10 @@ dependencies {
 }
 
 test {
+    // to continue build even if test fails
+    ignoreFailures = true
+    systemProperties System.getProperties()
+    //maxParallelForks = 3
     useTestNG() {
         preserveOrder true
         useDefaultListeners true
@@ -32,11 +36,20 @@ test {
         /*suites 'testng.xml'
         outputDirectory = file("$projectDir/build/testNgReport")*/
     }
+    // listen to events in the test execution lifecycle
+    beforeTest {
+        descriptor -> logger.lifecycle("Running test: " + descriptor)
+    }
+
     reports.html.setDestination(file("$projectDir/build/gradleReport"))
-    testLogging.showStandardStreams = true
+
     // set heap size for the test JVM(s)    minHeapSize = "128m"
     maxHeapSize = "512m"
+
     testLogging {
-        events "passed", "skipped", "failed"
+        dependsOn cleanTest
+        events = ["passed", "failed", "skipped"]
+        showStandardStreams = true
+        exceptionFormat = "full"
     }
 }

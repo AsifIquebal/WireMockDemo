@@ -13,6 +13,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import wiremock.myPojos.Guru;
+import wiremock.myPojos.Student;
 
 import java.io.File;
 import java.util.List;
@@ -44,6 +45,56 @@ public class TestClass1 {
     }
 
     @Test
+    public void testSample1() {
+        stubFor(get(urlEqualTo("/api/1"))
+                .willReturn(
+                        aResponse()
+                                .withHeader("Content-Type", "text/plain")
+                                .withHeader("Accept", "text")
+                                .withStatusMessage("Everything goes well...")
+                                .withStatus(200)
+                                .withBody("End point called successfully...")
+
+                )
+        );
+        Response response =
+                given()
+                        .when()
+                        .get("/api/1")
+                        .then()
+                        .extract()
+                        .response();
+        log.info(response.asString());
+    }
+
+    @Test
+    public void testSample2() {
+        Student student = new Student();
+        student.name("qsif");
+        student.roll(2);
+        student.std(10);
+
+        Student student2 = new Student().name("test").std(1).roll(2);
+
+        stubFor(get(urlEqualTo("/getinfo/johanHaleby"))
+                .willReturn(
+                        aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withStatus(200)
+                                .withBodyFile("test.json")
+                )
+        );
+        Response response =
+                given()
+                        .when()
+                        .get("/getinfo/johanHaleby")
+                        .then()
+                        .extract()
+                        .response();
+        System.out.println(response.asString());
+    }
+
+    @Test
     public void test01_BasicAuth() {
         stubs.getStubForBasicAuthHeader();
         Response response = given()
@@ -70,7 +121,7 @@ public class TestClass1 {
                 .then().log().headers().extract().response();
         Headers headers = response.getHeaders();
         for (Header header : headers) {
-            if(null!=header){
+            if (null != header) {
                 System.out.println("Header Name: " + header.getName() + ", Header Value: " + header.getValue());
             }
         }
@@ -227,6 +278,39 @@ public class TestClass1 {
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withBody("Resource state")));
+    }
+
+    @Test
+    public void testEveryThing() {
+        stubFor(any(urlPathEqualTo("/everything"))
+                .withHeader("Accept", containing("xml"))
+                .withCookie("session", matching(".*12345.*"))
+                .withQueryParam("search_term", equalTo("WireMock"))
+                .withBasicAuth("jeff@example.com", "jeff")
+                .withRequestBody(equalToXml("<search-results />"))
+                .withRequestBody(matchingXPath("//search-results"))
+                .withMultipartRequestBody(
+                        aMultipart()
+                                .withName("info")
+                                .withHeader("Content-Type", containing("charset"))
+                                .withBody(equalToJson("{}"))
+                )
+                .willReturn(aResponse()));
+
+        Response response = given()
+                .header("Accept", "xml")
+                .header("Authorization", "Basic amVmZkBleGFtcGxlLmNvbTpqZWZm")
+                .cookie("session", "12345")
+                .queryParam("search_term", "WireMock")
+                .body("<search-results />")
+                .body("//search-results")
+                //.auth().basic("jeff@example.com", "jeffteenjefftyjeff")
+
+                .multiPart("info", "{}", "charset")
+                .get("/everything")
+                .then().extract().response();
+        Assert.assertEquals(response.getStatusCode(), 200);
+
     }
 
 }
