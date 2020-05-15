@@ -3,7 +3,6 @@ package wiremock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import com.jayway.jsonpath.JsonPath;
 import io.restassured.builder.RequestSpecBuilder;
@@ -37,8 +36,7 @@ public class MockBase {
     public RequestSpecification setRALogFilter() {
         try {
             printStream = new PrintStream(new FileOutputStream("log/app.log", true));
-        } catch (
-                FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
         requestSpecification = new RequestSpecBuilder()
@@ -63,7 +61,7 @@ public class MockBase {
         //return wireMockServer;
     }
 
-    public void startWireMockServerOnThisPort(int port){
+    public void startWireMockServerOnThisPort(int port) {
         wireMockServer = new WireMockServer(wireMockConfig().port(port));
         wireMockServer.start();
         log.info("WireMock Started on Port: " + wireMockServer.port());
@@ -109,7 +107,7 @@ public class MockBase {
         log.info("Finished Executing -> " + result.getMethod().getMethodName());
     }
 
-    public void startWireMockOnThisPort(int port){
+    public void startWireMockOnThisPort(int port) {
         wireMockServer = new WireMockServer(wireMockConfig().port(port));
         wireMockServer.start();
         log.info("Started WireMock on Port: " + wireMockServer.port());
@@ -142,11 +140,10 @@ public class MockBase {
         log.info("Total Stub Found: " + stubMappings.size());
         log.info("Removing Stubs...");
         stubMappings.forEach(wireMockServer::removeStub);
-        //wireMockServer.removeStub();
-
     }
 
     public WireMockServer getWireMockServer() {
         return wireMockServer;
     }
+
 }

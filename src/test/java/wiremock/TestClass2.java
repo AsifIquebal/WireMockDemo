@@ -1,6 +1,7 @@
 package wiremock;
 
 import com.github.tomakehurst.wiremock.http.ContentTypeHeader;
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import com.jayway.jsonpath.JsonPath;
 import io.restassured.response.Response;
 import lombok.extern.log4j.Log4j2;
@@ -54,7 +55,7 @@ public class TestClass2 {
     }
 
     @Test
-    public void test02_Another(){
+    public void test02_Another() {
         mockBase.getWireMockServer().stubFor(get(urlPathEqualTo("/all/gurus"))
                 .willReturn(aResponse()
                         .withHeader(ContentTypeHeader.KEY, "application/json")
@@ -65,13 +66,13 @@ public class TestClass2 {
                 .get("/all/gurus")
                 .then()
                 .extract().response();
-        List<String> list = JsonPath.read(response.asString(),"$.gurus.[?(@.company=='Parkster')].country");
-        Assert.assertEquals(list.get(0),"Sweden");
+        List<String> list = JsonPath.read(response.asString(), "$.gurus.[?(@.company=='Parkster')].country");
+        Assert.assertEquals(list.get(0), "Sweden");
 
     }
 
     @Test
-    public void test03_ForStubMapping(){
+    public void test03_getAllCurrentlyRegisteredStubMapping() {
         Response response = given().spec(mockBase.setRALogFilter())
                 .port(2345)
                 .when()
@@ -82,25 +83,35 @@ public class TestClass2 {
     }
 
     @Test
-    public void test04_getStubByIdPathParam(){
+    public void test04_getStubByIdPathParam() {
         Response response = given()
                 .port(2345)
                 .when()
                 .get("/__admin/mappings")
                 .then()
                 .extract().response();
-        List<String> ids = JsonPath.read(response.asString(),"$.mappings.[*].id");
+        List<String> ids = JsonPath.read(response.asString(), "$.mappings.[*].id");
         Response response1 = given().spec(mockBase.setRALogFilter())
                 .port(2345)
-                .pathParams("pathParam1",ids.get(0))
+                .pathParams("pathParam1", ids.get(0))
                 .when()
                 .get("/__admin/mappings/{pathParam1}")
                 .then()
                 .extract().response();
     }
 
-
-
+    @Test
+    public void test05_getAllRequestReceivedByWireMock() {
+        Response response = given().spec(mockBase.setRALogFilter())
+                .port(2345)
+                .when()
+                .get("/__admin/requests")
+                .then()
+                .extract().response();
+        // alternately
+        List<ServeEvent> allServeEvents = mockBase.getWireMockServer().getAllServeEvents();
+        allServeEvents.forEach(a -> System.out.println(a.getRequest().getAbsoluteUrl()));
+    }
 
 
 }
