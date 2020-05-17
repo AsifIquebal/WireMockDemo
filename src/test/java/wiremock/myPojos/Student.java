@@ -9,7 +9,6 @@ import lombok.*;
 
 public class Student {
     String name;
-    @NonNull
     int roll;
     int std;
 

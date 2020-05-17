@@ -45,7 +45,7 @@ public class TestClass1 {
     }
 
     @Test
-    public void testSample1() {
+    public void test01_Sample1() {
         stubFor(get(urlEqualTo("/api/1"))
                 .willReturn(
                         aResponse()
@@ -68,7 +68,7 @@ public class TestClass1 {
     }
 
     @Test
-    public void testSample2() {
+    public void test02_Sample2() {
         Student student = Student.builder().name("Harry").std(1).roll(2).build();
         System.out.println(student);
         stubFor(post(urlPathEqualTo("/post/v2"))
@@ -87,7 +87,7 @@ public class TestClass1 {
     }
 
     @Test
-    public void test01_BasicAuth() {
+    public void test03_BasicAuth() {
         stubs.getStubForBasicAuthHeader();
         Response response = given()
                 .spec(mockBase.setRALogFilter())
@@ -101,7 +101,7 @@ public class TestClass1 {
     }
 
     @Test
-    public void test02_sampleGet_queryParams() {
+    public void test04_sampleGet_queryParams() {
         stubs.getStubForToolQuery(token);
         Response response = given()
                 .auth().oauth2(token)
@@ -123,7 +123,7 @@ public class TestClass1 {
     }
 
     @Test
-    public void test03_samplePostJsonPayload() {
+    public void test05_samplePostJsonPayload() {
         stubFor(post(urlPathEqualTo("/form/params"))
                 .withRequestBody(matchingJsonPath("$.gurus[?(@.tool == 'Rest Assured')]"))
                 .willReturn(aResponse().withBodyFile("test02.json")));
@@ -138,7 +138,35 @@ public class TestClass1 {
     }
 
     @Test
-    public void test04_jsonPathParamExample() {
+    public void test06_multiPart() {
+        File file = new File("src/test/resources/__files/test02.json");
+        stubFor(any(urlPathEqualTo("/everything"))
+                .withHeader("Accept", containing("xml"))
+                .withCookie("session", matching(".*12345.*"))
+                .withQueryParam("search_term", equalTo("WireMock"))
+                .withBasicAuth("asif", "superSecret")
+                .withMultipartRequestBody(aMultipart()
+                        .withName("file")
+                        .withHeader("Content-Type", containing("json"))
+                        .withBody(containing("gurus"))
+                )
+                .willReturn(aResponse().withStatus(200)));
+
+        Response response = given().spec(mockBase.setRALogFilter())
+                .header("Accept", "xml")
+                .header("Authorization", token)
+                .contentType("multipart/form-data")
+                .cookie("session", "12345")
+                .queryParam("search_term", "WireMock")
+                .multiPart("file", file, "application/json")
+                .when()
+                .get("/everything")
+                .then().extract().response();
+        Assert.assertEquals(response.getStatusCode(), 200);
+    }
+
+    @Test
+    public void test07_jsonPathParamExample() {
         stubFor(get(urlPathEqualTo("/all/gurus"))
                 .willReturn(aResponse()
                         .withHeader(ContentTypeHeader.KEY, "application/json")
@@ -181,7 +209,7 @@ public class TestClass1 {
     }
 
     @Test
-    public void test05_responseDefinitionBuilder() {
+    public void test08_responseDefinitionBuilder() {
         ResponseDefinitionBuilder responseDefinitionBuilder = new ResponseDefinitionBuilder();
         responseDefinitionBuilder
                 .withHeader(ContentTypeHeader.KEY, "application/json")
@@ -200,7 +228,7 @@ public class TestClass1 {
     }
 
     @Test
-    public void test06_responseFile() {
+    public void test09_responseFile() {
         ResponseDefinitionBuilder responseDefinitionBuilder = new ResponseDefinitionBuilder();
         responseDefinitionBuilder
                 .withHeader(ContentTypeHeader.KEY, "application/json")
@@ -220,7 +248,7 @@ public class TestClass1 {
     }
 
     @Test
-    public void test07_stafeFul() {
+    public void test10_TODO_stateFul() {
         // todo
         ResponseDefinitionBuilder responseDefinitionBuilder01 = new ResponseDefinitionBuilder();
         responseDefinitionBuilder01
@@ -259,7 +287,7 @@ public class TestClass1 {
     }
 
     @Test
-    public void testPriority() {
+    public void test11_TODO_Priority() {
         //TODO
         //Catch-all case
         stubFor(get(urlMatching("/api/.*")).atPriority(5)
@@ -270,39 +298,6 @@ public class TestClass1 {
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withBody("Resource state")));
-    }
-
-    @Test
-    public void testEveryThing() {
-        stubFor(any(urlPathEqualTo("/everything"))
-                .withHeader("Accept", containing("xml"))
-                .withCookie("session", matching(".*12345.*"))
-                .withQueryParam("search_term", equalTo("WireMock"))
-                .withBasicAuth("jeff@example.com", "jeff")
-                .withRequestBody(equalToXml("<search-results />"))
-                .withRequestBody(matchingXPath("//search-results"))
-                .withMultipartRequestBody(
-                        aMultipart()
-                                .withName("info")
-                                .withHeader("Content-Type", containing("charset"))
-                                .withBody(equalToJson("{}"))
-                )
-                .willReturn(aResponse()));
-
-        Response response = given()
-                .header("Accept", "xml")
-                .header("Authorization", "Basic amVmZkBleGFtcGxlLmNvbTpqZWZm")
-                .cookie("session", "12345")
-                .queryParam("search_term", "WireMock")
-                .body("<search-results />")
-                .body("//search-results")
-                //.auth().basic("jeff@example.com", "jeffteenjefftyjeff")
-
-                .multiPart("info", "{}", "charset")
-                .get("/everything")
-                .then().extract().response();
-        Assert.assertEquals(response.getStatusCode(), 200);
-
     }
 
 }
