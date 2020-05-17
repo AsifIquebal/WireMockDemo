@@ -4,6 +4,7 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.http.ContentTypeHeader;
 import com.jayway.jsonpath.JsonPath;
+import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.http.Headers;
 import io.restassured.response.Response;
@@ -35,6 +36,7 @@ public class TestClass1 {
         mockBase.startWireMockServer();
         stubs = new Stubs();
         token = mockBase.getAuthToken("asif", "superSecret");
+        System.out.println(token);
     }
 
     @AfterClass
@@ -103,7 +105,7 @@ public class TestClass1 {
     @Test
     public void test04_sampleGet_queryParams() {
         stubs.getStubForToolQuery(token);
-        Response response = given()
+        Response response = given().spec(mockBase.setRALogFilter())
                 .auth().oauth2(token)
                 // oauth2 does the same thing, it puts the token into the header
                 //.header("Authorization", token)
@@ -141,7 +143,7 @@ public class TestClass1 {
     public void test06_multiPart() {
         File file = new File("src/test/resources/__files/test02.json");
         stubFor(any(urlPathEqualTo("/everything"))
-                .withHeader("Accept", containing("xml"))
+                .withHeader("Accept", containing("json"))
                 .withCookie("session", matching(".*12345.*"))
                 .withQueryParam("search_term", equalTo("WireMock"))
                 .withBasicAuth("asif", "superSecret")
@@ -153,8 +155,8 @@ public class TestClass1 {
                 .willReturn(aResponse().withStatus(200)));
 
         Response response = given().spec(mockBase.setRALogFilter())
-                .header("Accept", "xml")
-                .header("Authorization", token)
+                .accept(ContentType.JSON)
+                .auth().preemptive().basic("asif", "superSecret")
                 .contentType("multipart/form-data")
                 .cookie("session", "12345")
                 .queryParam("search_term", "WireMock")
