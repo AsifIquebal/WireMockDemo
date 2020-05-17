@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--In practise you would probably use a configuration status level of INFO or ERROR,
+ but while setting up a configuration it may be useful to set this to DEBUG.-->
+<Configuration status="INFO">
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <!--<PatternLayout pattern="%d{HH:mm:ss,SSS} [%t] %-5level %logger{36} - %msg%n"/>-->
+            <PatternLayout pattern="%highlight{%d{dd MMM yyyy HH:mm:ss,SSS} %-5level %logger{36}.%M() @%L - %msg%n}{FATAL=red blink, ERROR=red, WARN=yellow bold, INFO=blue, DEBUG=green bold, TRACE=blue}"/>
+        </Console>
+
+        <File name="log4j2LogFile" fileName="log/app.log">
+            <PatternLayout pattern="%d{dd MMM yyyy HH:mm:ss,SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </File>
+
+    </Appenders>
+
+    <Loggers>
+        <Root level="TRACE">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="log4j2LogFile"/>
+        </Root>
+    </Loggers>
+
+</Configuration>
