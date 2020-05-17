@@ -69,29 +69,21 @@ public class TestClass1 {
 
     @Test
     public void testSample2() {
-        Student student = new Student();
-        student.name("qsif");
-        student.roll(2);
-        student.std(10);
-
-        Student student2 = new Student().name("test").std(1).roll(2);
-
-        stubFor(get(urlEqualTo("/getinfo/johanHaleby"))
-                .willReturn(
-                        aResponse()
-                                .withHeader("Content-Type", "application/json")
-                                .withStatus(200)
-                                .withBodyFile("test.json")
-                )
-        );
-        Response response =
-                given()
-                        .when()
-                        .get("/getinfo/johanHaleby")
-                        .then()
-                        .extract()
-                        .response();
-        System.out.println(response.asString());
+        Student student = Student.builder().name("Harry").std(1).roll(2).build();
+        System.out.println(student);
+        stubFor(post(urlPathEqualTo("/post/v2"))
+                .withRequestBody(matchingJsonPath("$.name"))
+                .willReturn(aResponse().withStatus(200)));
+        Response response = given().spec(mockBase.setRALogFilter())
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .when()
+                .body(student)
+                .post("/post/v2")
+                .then()
+                .extract()
+                .response();
+        Assert.assertEquals(response.getStatusCode(), 200, "Status Code didn't matched...");
     }
 
     @Test

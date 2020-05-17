@@ -3,7 +3,6 @@ package wiremock.myPojos;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.testng.annotations.Test;
 
 import java.util.Objects;
 

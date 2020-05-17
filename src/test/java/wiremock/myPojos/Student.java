@@ -1,41 +1,17 @@
 package wiremock.myPojos;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-import lombok.experimental.Accessors;
+import lombok.*;
 
-@Accessors(fluent = true, chain = true)
-@Getter
-@Setter
-@ToString
+@Builder
+@Data
+@EqualsAndHashCode(exclude = "std")
+@ToString(includeFieldNames = false)
 
 public class Student {
     String name;
+    @NonNull
     int roll;
     int std;
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getRoll() {
-        return roll;
-    }
-
-    public void setRoll(int roll) {
-        this.roll = roll;
-    }
-
-    public int getStd() {
-        return std;
-    }
-
-    public void setStd(int std) {
-        this.std = std;
-    }
 }
+
