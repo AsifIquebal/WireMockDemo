@@ -1,43 +1,30 @@
 pipeline {
-    agent any
+    agent { label 'master' }
     stages {
-
-        stage('Cleaning Stage') {
+        stage('SCM') {
             steps {
-                withMaven(maven : 'MyMaven'){
-                    script{
-                        if (!isUnix()) {
-                            echo "it's Windows"
-                            bat 'mvn clean'
-                        } else {
-                            echo "it's unix/mac"
-                            sh 'mvn clean'
-                        }
-                    }
-                }
+                git url: 'https://github.com/AsifIquebal/WireMockDemo.git'
             }
         }
-
-        stage('Testing Stage') {
+        stage('Tests') {
             steps {
-                withMaven(maven : 'MyMaven'){
-                    script{
-                        if (!isUnix()) {
-                            echo "it's Windows"
-                            bat 'mvn test'
-                        } else {
-                            echo "it's unix/mac"
-                            sh 'mvn test'
-                        }
+                script {
+                    try {
+                        sh './gradlew clean test' //run a gradle task
+                    } finally {
+                        echo 'finally block'
                     }
                 }
             }
         }
     }
     post {
-        always {
-            echo 'I will always say Hello again!'
+        success {
+            echo 'This will run only if successful'
+        }
+        failure {
+            echo 'This will run only if failed'
         }
     }
+
 }
-// Make sure Jenkins has Maven Plugin : https://wiki.jenkins.io/display/JENKINS/Pipeline+Maven+Plugin
