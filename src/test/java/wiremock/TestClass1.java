@@ -8,6 +8,7 @@ import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.http.Headers;
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 import lombok.extern.log4j.Log4j2;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -28,12 +29,15 @@ public class TestClass1 {
     Stubs stubs;
     String token;
     MockBase mockBase;
+    RequestSpecification requestSpecification;
 
     @BeforeClass
     public void setUp() {
         mockBase = new MockBase();
         mockBase.turnOffWiremockLogging();
         mockBase.startWireMockServer();
+        requestSpecification = mockBase.setRALogFilter();
+        requestSpecification = mockBase.setPort();
         stubs = new Stubs();
         token = mockBase.getAuthToken("asif", "superSecret");
         System.out.println(token);
@@ -48,7 +52,7 @@ public class TestClass1 {
 
     @Test
     public void test01_Sample1() {
-        stubFor(get(urlEqualTo("/api/1"))
+        mockBase.getWireMockServer().stubFor(get(urlEqualTo("/api/1"))
                 .willReturn(
                         aResponse()
                                 .withHeader("Content-Type", "text/plain")
@@ -56,11 +60,10 @@ public class TestClass1 {
                                 .withStatusMessage("Everything goes well...")
                                 .withStatus(200)
                                 .withBody("End point called successfully...")
-
                 )
         );
         Response response =
-                given()
+                given().spec(requestSpecification)
                         .when()
                         .get("/api/1")
                         .then()
@@ -73,10 +76,10 @@ public class TestClass1 {
     public void test02_Sample2() {
         Student student = Student.builder().name("Harry").std(1).roll(2).build();
         System.out.println(student);
-        stubFor(post(urlPathEqualTo("/post/v2"))
+        mockBase.getWireMockServer().stubFor(post(urlPathEqualTo("/post/v2"))
                 .withRequestBody(matchingJsonPath("$.name"))
                 .willReturn(aResponse().withStatus(200)));
-        Response response = given().spec(mockBase.setRALogFilter())
+        Response response = given().spec(requestSpecification)
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
                 .when()
@@ -90,9 +93,9 @@ public class TestClass1 {
 
     @Test
     public void test03_BasicAuth() {
-        stubs.getStubForBasicAuthHeader();
+        stubs.getStubForBasicAuthHeader(mockBase.getWireMockServer());
         Response response = given()
-                .spec(mockBase.setRALogFilter())
+                .spec(requestSpecification)
                 .header("Authorization", token)
                 .when()
                 .get("/basic/auth/case-insensitive")
@@ -104,8 +107,8 @@ public class TestClass1 {
 
     @Test
     public void test04_sampleGet_queryParams() {
-        stubs.getStubForToolQuery(token);
-        Response response = given().spec(mockBase.setRALogFilter())
+        stubs.getStubForToolQuery(token, mockBase.getWireMockServer());
+        Response response = given().spec(requestSpecification)
                 .auth().oauth2(token)
                 // oauth2 does the same thing, it puts the token into the header
                 //.header("Authorization", token)
@@ -126,11 +129,11 @@ public class TestClass1 {
 
     @Test
     public void test05_samplePostJsonPayload() {
-        stubFor(post(urlPathEqualTo("/form/params"))
+        mockBase.getWireMockServer().stubFor(post(urlPathEqualTo("/form/params"))
                 .withRequestBody(matchingJsonPath("$.gurus[?(@.tool == 'Rest Assured')]"))
                 .willReturn(aResponse().withBodyFile("test02.json")));
         File file = new File("src/test/resources/__files/test02.json");
-        Response response = given()
+        Response response = given().spec(requestSpecification)
                 .when()
                 .body(file)
                 .post("/form/params")
@@ -142,7 +145,7 @@ public class TestClass1 {
     @Test
     public void test06_multiPart() {
         File file = new File("src/test/resources/__files/test02.json");
-        stubFor(any(urlPathEqualTo("/everything"))
+        mockBase.getWireMockServer().stubFor(any(urlPathEqualTo("/everything"))
                 .withHeader("Accept", containing("json"))
                 .withCookie("session", matching(".*12345.*"))
                 .withQueryParam("search_term", equalTo("WireMock"))
@@ -154,7 +157,7 @@ public class TestClass1 {
                 )
                 .willReturn(aResponse().withStatus(200)));
 
-        Response response = given().spec(mockBase.setRALogFilter())
+        Response response = given().spec(requestSpecification)
                 .accept(ContentType.JSON)
                 .auth().preemptive().basic("asif", "superSecret")
                 .contentType("multipart/form-data")
@@ -169,22 +172,22 @@ public class TestClass1 {
 
     @Test
     public void test07_jsonPathParamExample() {
-        stubFor(get(urlPathEqualTo("/all/gurus"))
+        mockBase.getWireMockServer().stubFor(get(urlPathEqualTo("/all/gurus"))
                 .willReturn(aResponse()
                         .withHeader(ContentTypeHeader.KEY, "application/json")
                         .withBodyFile("test02.json")));
 
-        List<Guru> gurus01 = given()
+        List<Guru> gurus01 = given().spec(requestSpecification)
                 .when().get("/all/gurus").then()
                 .extract().jsonPath().getList("gurus", Guru.class);
         System.out.println("Size: " + gurus01.size() + "\n" + gurus01.get(0).toString());
 
-        List<Guru> gurus02 = given()
+        List<Guru> gurus02 = given().spec(requestSpecification)
                 .when().get("/all/gurus").then()
                 .extract().jsonPath().param("id", 2).getList("gurus.findAll {it.id == id}", Guru.class);
         System.out.println("Size: " + gurus02.size() + "\n" + gurus02.get(0).toString());
 
-        List<Guru> gurus03 = given()
+        List<Guru> gurus03 = given().spec(requestSpecification)
                 .when().get("/all/gurus").then()
                 .extract().jsonPath().param("id", 2).getList("gurus.findAll { it -> it.id == id }", Guru.class);
         System.out.println("Size: " + gurus03.size() + "\n" + gurus03.get(0).toString());
@@ -218,12 +221,13 @@ public class TestClass1 {
                 .withStatus(200)
                 .withStatusMessage("Status: OK")
                 .withBody("This is a test");
-        WireMock.stubFor(WireMock.get("/tool/selenium")
+        //WireMock.stubFor(WireMock.get("/tool/selenium")
+        mockBase.getWireMockServer().stubFor(WireMock.get("/tool/selenium")
                 .willReturn(responseDefinitionBuilder));
-        Response response = given().
-                when().
-                get("/tool/selenium").
-                then().extract().response();
+        Response response = given().spec(requestSpecification)
+                .when()
+                .get("/tool/selenium")
+                .then().extract().response();
         System.out.println(response.getStatusLine());
         System.out.println(response.getHeaders());
         System.out.println(response.getBody().asString());
@@ -237,11 +241,11 @@ public class TestClass1 {
                 .withStatus(200)
                 .withStatusMessage("Status: OK")
                 .withBodyFile("test.json");
-        stubFor(WireMock.get(urlPathEqualTo("/getinfo/guru"))
+        mockBase.getWireMockServer().stubFor(WireMock.get(urlPathEqualTo("/getinfo/guru"))
                 .withQueryParam("name", equalTo("johan-haleby"))
                 .willReturn(responseDefinitionBuilder)
         );
-        Response response = given()
+        Response response = given().spec(requestSpecification)
                 .when()
                 .queryParam("name", "johan-haleby")
                 .get("/getinfo/guru")
@@ -265,25 +269,25 @@ public class TestClass1 {
                 .withStatusMessage("Status: OK")
                 .withBody("KEY:02");
 
-        stubFor(get(urlPathEqualTo("/todo/items"))//.inScenario("TestScenario")
+        mockBase.getWireMockServer().stubFor(get(urlPathEqualTo("/todo/items"))//.inScenario("TestScenario")
                         .withQueryParam("num", equalTo("a"))
                         .withQueryParam("num", equalTo("b"))
                         //.whenScenarioStateIs(STARTED)
                         .willReturn(responseDefinitionBuilder01)
                 //.willSetStateTo("2nd Value")
         );
-        stubFor(get(urlPathEqualTo("/todo/items"))//.inScenario("TestScenario")
+        mockBase.getWireMockServer().stubFor(get(urlPathEqualTo("/todo/items"))//.inScenario("TestScenario")
                         .withQueryParam("num", equalTo("b"))
                         //.whenScenarioStateIs(STARTED)
                         .willReturn(responseDefinitionBuilder02)
                 //.willSetStateTo("Cancel")
         );
 
-        Response response = given().
-                when().
-                queryParam("num", "b").
-                get("/todo/items").
-                then().extract().response();
+        Response response = given().spec(requestSpecification)
+                .when()
+                .queryParam("num", "b")
+                .get("/todo/items")
+                .then().extract().response();
         System.out.println(response.asString());
 
     }

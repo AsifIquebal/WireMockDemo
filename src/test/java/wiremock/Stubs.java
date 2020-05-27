@@ -3,6 +3,7 @@ package wiremock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.BasicCredentials;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import lombok.extern.log4j.Log4j2;
@@ -12,7 +13,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 @Log4j2
 public class Stubs {
 
-    public StubMapping getStubForBasicAuthPreemptiveAuthToken() {
+    public StubMapping getStubForBasicAuthPreemptiveAuthToken(WireMockServer wireMockServer) {
         BasicCredentials basicCredentials = new BasicCredentials("asif", "superSecret");
         String token = basicCredentials.asAuthorizationHeaderValue();
         String json = "{\"auth_token\":\"" + token + "\"}";
@@ -25,16 +26,17 @@ public class Stubs {
             e.printStackTrace();
         }
         log.info("Creating Stub for: /basic/auth/preemptive");
+
         return
-                stubFor(get(urlEqualTo("/basic/auth/preemptive"))
+                wireMockServer.stubFor(get(urlEqualTo("/basic/auth/preemptive"))
                         .withBasicAuth("asif", "superSecret")
                         .willReturn(aResponse().withStatus(200).withJsonBody(jsonNode)))
                 ;
     }
 
-    public StubMapping getStubForBasicAuthHeader() {
+    public StubMapping getStubForBasicAuthHeader(WireMockServer wireMockServer) {
         log.info("Creating Stub for: /basic/auth/case-insensitive");
-        return stubFor(get(urlEqualTo("/basic/auth/case-insensitive"))
+        return wireMockServer.stubFor(get(urlEqualTo("/basic/auth/case-insensitive"))
                 .withBasicAuth("asif", "superSecret")
                 .willReturn(aResponse()
                         .withBody("This is a sample body")
@@ -42,7 +44,7 @@ public class Stubs {
                 ));
     }
 
-    public StubMapping getStubForToolQuery(String token) {
+    public StubMapping getStubForToolQuery(String token, WireMockServer wireMockServer) {
         log.info("Creating Stub for: /tool/mocking");
         String json = "{\"boolean\":true,\"color\":\"gold\",\"name\":\"Wiremock\",\"number\":123,\"Properties\":{\"description\":\"WireMock is a simulator for HTTP-based APIs. Some might consider it a service virtualization tool or a mock server\",\"client\":\"RestAssured\"},\"string\":\"Hello World\"}";
         ObjectMapper objectMapper = new ObjectMapper();
@@ -53,7 +55,7 @@ public class Stubs {
             e.printStackTrace();
         }
         // when using query param, use urlPathEqualTo instead of urlEqualTo
-        return stubFor(
+        return wireMockServer.stubFor(
                 get(urlPathEqualTo("/tool/mocking"))
                         .withHeader("Authorization", containing(token))
                         .withQueryParam("name", equalTo("Wiremock"))

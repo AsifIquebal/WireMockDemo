@@ -19,7 +19,11 @@ import org.testng.annotations.BeforeMethod;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
@@ -29,7 +33,6 @@ import static io.restassured.RestAssured.given;
 public class MockBase {
 
     private WireMockServer wireMockServer;
-
     private RequestSpecification requestSpecification;
     PrintStream printStream;
 
@@ -46,6 +49,13 @@ public class MockBase {
         return requestSpecification;
     }
 
+    public RequestSpecification setPort(){
+        requestSpecification = new RequestSpecBuilder()
+                .setPort(wireMockServer.port())
+                .build();
+        return requestSpecification;
+    }
+
     public void closePrintStream() {
         if (null != printStream) {
             log.info("Closing PS...");
@@ -54,12 +64,52 @@ public class MockBase {
         }
     }
 
+    private boolean isPortInUse(String host, int port) {
+        boolean result = false;
+        try {
+            (new Socket(host, port)).close();
+            result = true;
+        } catch (SocketException e) {
+            // Could not connect.
+        } catch (UnknownHostException e) {
+            // Host not found
+        } catch (IOException e) {
+            // IO exception
+        }
+        return result;
+    }
+
     public void startWireMockServer() {
         log.info("Starting WireMockServer");
-        wireMockServer = new WireMockServer();
+        if (isPortInUse(null, 8080)) {
+            log.info("Port 8080 is Busy");
+            wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
+        } else {
+            wireMockServer = new WireMockServer();
+        }
         wireMockServer.start();
-        //return wireMockServer;
+        log.info("Started WireMockServer at Port: " + wireMockServer.port());
     }
+
+    /*@Test
+    public void test001_dynamicPort() {
+        WireMockServer wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
+        wireMockServer.start();
+        log.info("Started WireMockServer at Port: " + wireMockServer.port());
+        wireMockServer.stubFor(get(urlEqualTo("/some/thing"))
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "text/plain")
+                        .withBody("Hello World!")));
+        Response response = given().spec(mockBase.setRALogFilter())
+                .port(wireMockServer.port())
+                .when()
+                .get("/some/thing")
+                .then()
+                .extract()
+                .response();
+        Assert.assertEquals(response.getBody().asString(), "Hello World!");
+        wireMockServer.shutdown();
+    }*/
 
     public void startWireMockServerOnThisPort(int port) {
         wireMockServer = new WireMockServer(wireMockConfig().port(port));
@@ -77,8 +127,8 @@ public class MockBase {
 
     public String getAuthToken(String userName, String passWord) {
         log.info("Setting User Credentials...");
-        new Stubs().getStubForBasicAuthPreemptiveAuthToken();
-        Response response = given().
+        new Stubs().getStubForBasicAuthPreemptiveAuthToken(wireMockServer);
+        Response response = given().spec(setPort()).
                 auth().preemptive().basic(userName, passWord).
                 when().
                 get("/basic/auth/preemptive").
