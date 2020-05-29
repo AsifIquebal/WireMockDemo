@@ -2,7 +2,12 @@ pipeline {
   agent any
   stages {
     stage('Build') {
+      agent any
+      environment {
+        options = 'skipDefaultCheckout'
+      }
       steps {
+        isUnix()
         sleep 2
       }
     }
