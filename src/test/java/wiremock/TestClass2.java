@@ -24,14 +24,13 @@ public class TestClass2 {
     @BeforeClass
     public void setUp() {
         mockBase = new MockBase();
-        mockBase.turnOffWiremockLogging();
         mockBase.startWireMockServerOnThisPort(2345);
         stubs = new Stubs();
     }
 
     @AfterClass
     public void tearDown() {
-        mockBase.removeAllStub();
+        mockBase.removeResetAllStub();
         mockBase.stopWireMockServer();
         mockBase.closePrintStream();
     }
@@ -43,7 +42,7 @@ public class TestClass2 {
                         .withBody("Employee 001 \nEmployee 002\n")
                         .withStatus(200)
                 ));
-        Response response = given().spec(mockBase.setRALogFilter())
+        Response response = given().spec(mockBase.getRequestSpecification())
                 .port(2345)
                 .when()
                 .get("/emp/v2")
@@ -60,7 +59,7 @@ public class TestClass2 {
                 .willReturn(aResponse()
                         .withHeader(ContentTypeHeader.KEY, "application/json")
                         .withBodyFile("test02.json")));
-        Response response = given().spec(mockBase.setRALogFilter())
+        Response response = given().spec(mockBase.getRequestSpecification())
                 .port(2345)
                 .when()
                 .get("/all/gurus")
@@ -73,7 +72,7 @@ public class TestClass2 {
 
     @Test
     public void test03_getAllCurrentlyRegisteredStubMapping() {
-        Response response = given().spec(mockBase.setRALogFilter())
+        Response response = given().spec(mockBase.getRequestSpecification())
                 .port(2345)
                 .when()
                 .get("/__admin/mappings")
@@ -91,7 +90,7 @@ public class TestClass2 {
                 .then()
                 .extract().response();
         List<String> ids = JsonPath.read(response.asString(), "$.mappings.[*].id");
-        Response response1 = given().spec(mockBase.setRALogFilter())
+        Response response1 = given().spec(mockBase.getRequestSpecification())
                 .port(2345)
                 .pathParams("pathParam1", ids.get(0))
                 .when()
@@ -102,7 +101,7 @@ public class TestClass2 {
 
     @Test
     public void test05_getAllRequestReceivedByWireMock() {
-        Response response = given().spec(mockBase.setRALogFilter())
+        Response response = given().spec(mockBase.getRequestSpecification())
                 .port(2345)
                 .when()
                 .get("/__admin/requests")

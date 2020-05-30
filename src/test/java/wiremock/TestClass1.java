@@ -8,7 +8,6 @@ import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.http.Headers;
 import io.restassured.response.Response;
-import io.restassured.specification.RequestSpecification;
 import lombok.extern.log4j.Log4j2;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -29,15 +28,10 @@ public class TestClass1 {
     Stubs stubs;
     String token;
     MockBase mockBase;
-    RequestSpecification requestSpecification;
 
     @BeforeClass
     public void setUp() {
         mockBase = new MockBase();
-        mockBase.turnOffWiremockLogging();
-        mockBase.startWireMockServer();
-        requestSpecification = mockBase.setRALogFilter();
-        requestSpecification = mockBase.setPort();
         stubs = new Stubs();
         token = mockBase.getAuthToken("asif", "superSecret");
         System.out.println(token);
@@ -45,7 +39,7 @@ public class TestClass1 {
 
     @AfterClass
     public void tearDown() {
-        mockBase.removeAllStub();
+        mockBase.removeResetAllStub();
         mockBase.stopWireMockServer();
         mockBase.closePrintStream();
     }
@@ -62,13 +56,12 @@ public class TestClass1 {
                                 .withBody("End point called successfully...")
                 )
         );
-        Response response =
-                given().spec(requestSpecification)
-                        .when()
-                        .get("/api/1")
-                        .then()
-                        .extract()
-                        .response();
+        Response response = given()
+                .when()
+                .get("/api/1")
+                .then()
+                .extract()
+                .response();
         log.info(response.asString());
     }
 
@@ -79,7 +72,7 @@ public class TestClass1 {
         mockBase.getWireMockServer().stubFor(post(urlPathEqualTo("/post/v2"))
                 .withRequestBody(matchingJsonPath("$.name"))
                 .willReturn(aResponse().withStatus(200)));
-        Response response = given().spec(requestSpecification)
+        Response response = given()
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
                 .when()
@@ -95,7 +88,6 @@ public class TestClass1 {
     public void test03_BasicAuth() {
         stubs.getStubForBasicAuthHeader(mockBase.getWireMockServer());
         Response response = given()
-                .spec(requestSpecification)
                 .header("Authorization", token)
                 .when()
                 .get("/basic/auth/case-insensitive")
@@ -108,7 +100,7 @@ public class TestClass1 {
     @Test
     public void test04_sampleGet_queryParams() {
         stubs.getStubForToolQuery(token, mockBase.getWireMockServer());
-        Response response = given().spec(requestSpecification)
+        Response response = given()
                 .auth().oauth2(token)
                 // oauth2 does the same thing, it puts the token into the header
                 //.header("Authorization", token)
@@ -133,7 +125,7 @@ public class TestClass1 {
                 .withRequestBody(matchingJsonPath("$.gurus[?(@.tool == 'Rest Assured')]"))
                 .willReturn(aResponse().withBodyFile("test02.json")));
         File file = new File("src/test/resources/__files/test02.json");
-        Response response = given().spec(requestSpecification)
+        Response response = given()
                 .when()
                 .body(file)
                 .post("/form/params")
@@ -157,7 +149,7 @@ public class TestClass1 {
                 )
                 .willReturn(aResponse().withStatus(200)));
 
-        Response response = given().spec(requestSpecification)
+        Response response = given()
                 .accept(ContentType.JSON)
                 .auth().preemptive().basic("asif", "superSecret")
                 .contentType("multipart/form-data")
@@ -177,17 +169,17 @@ public class TestClass1 {
                         .withHeader(ContentTypeHeader.KEY, "application/json")
                         .withBodyFile("test02.json")));
 
-        List<Guru> gurus01 = given().spec(requestSpecification)
+        List<Guru> gurus01 = given()
                 .when().get("/all/gurus").then()
                 .extract().jsonPath().getList("gurus", Guru.class);
         System.out.println("Size: " + gurus01.size() + "\n" + gurus01.get(0).toString());
 
-        List<Guru> gurus02 = given().spec(requestSpecification)
+        List<Guru> gurus02 = given()
                 .when().get("/all/gurus").then()
                 .extract().jsonPath().param("id", 2).getList("gurus.findAll {it.id == id}", Guru.class);
         System.out.println("Size: " + gurus02.size() + "\n" + gurus02.get(0).toString());
 
-        List<Guru> gurus03 = given().spec(requestSpecification)
+        List<Guru> gurus03 = given()
                 .when().get("/all/gurus").then()
                 .extract().jsonPath().param("id", 2).getList("gurus.findAll { it -> it.id == id }", Guru.class);
         System.out.println("Size: " + gurus03.size() + "\n" + gurus03.get(0).toString());
@@ -224,7 +216,7 @@ public class TestClass1 {
         //WireMock.stubFor(WireMock.get("/tool/selenium")
         mockBase.getWireMockServer().stubFor(WireMock.get("/tool/selenium")
                 .willReturn(responseDefinitionBuilder));
-        Response response = given().spec(requestSpecification)
+        Response response = given()
                 .when()
                 .get("/tool/selenium")
                 .then().extract().response();
@@ -245,7 +237,7 @@ public class TestClass1 {
                 .withQueryParam("name", equalTo("johan-haleby"))
                 .willReturn(responseDefinitionBuilder)
         );
-        Response response = given().spec(requestSpecification)
+        Response response = given()
                 .when()
                 .queryParam("name", "johan-haleby")
                 .get("/getinfo/guru")
@@ -254,7 +246,41 @@ public class TestClass1 {
     }
 
     @Test
-    public void test10_TODO_stateFul() {
+    public void test10_fixedDelay() {
+        // uncommenting this will make the test work
+        // Thread.sleep(5000);
+
+        mockBase.getWireMockServer().stubFor(put(urlEqualTo("/cars/1"))
+                .withRequestBody(containing("Nissan"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withFixedDelay(5000)
+                        .withBody("{ \"name\": \"Nissan Maxima\" }")));
+        Response response = given()
+                .when()
+                .body("{\"name\": \"Nissan\"}")
+                .put("/cars/1")
+                .then().extract().response();
+        System.out.println(response.asString());
+    }
+
+    @Test
+    public void test11_chunkedDribbleDelay() {
+        mockBase.getWireMockServer().stubFor(get("/chunked/delayed")
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody("Hello world!")
+                        .withChunkedDribbleDelay(5, 5000)));
+        // With the above settings the Hello world! response body will be broken into five chunks and returned one at a time with a 1s gap between each
+        Response response = given()
+                .when()
+                .get("/chunked/delayed")
+                .then().extract().response();
+        System.out.println(response.asString());
+    }
+
+    @Test
+    public void test_TODO_stateFul() {
         // todo
         ResponseDefinitionBuilder responseDefinitionBuilder01 = new ResponseDefinitionBuilder();
         responseDefinitionBuilder01
@@ -283,7 +309,7 @@ public class TestClass1 {
                 //.willSetStateTo("Cancel")
         );
 
-        Response response = given().spec(requestSpecification)
+        Response response = given()
                 .when()
                 .queryParam("num", "b")
                 .get("/todo/items")
@@ -293,14 +319,14 @@ public class TestClass1 {
     }
 
     @Test
-    public void test11_TODO_Priority() {
+    public void test_TODO_Priority() {
         //TODO
         //Catch-all case
-        stubFor(get(urlMatching("/api/.*")).atPriority(5)
+        mockBase.getWireMockServer().stubFor(get(urlMatching("/api/.*")).atPriority(5)
                 .willReturn(aResponse().withStatus(401)));
 
         //Specific case
-        stubFor(get(urlEqualTo("/api/specific-resource")).atPriority(1) //1 is highest
+        mockBase.getWireMockServer().stubFor(get(urlEqualTo("/api/specific-resource")).atPriority(1) //1 is highest
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withBody("Resource state")));

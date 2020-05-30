@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import com.jayway.jsonpath.JsonPath;
+import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.log.RequestLoggingFilter;
@@ -34,9 +35,22 @@ public class MockBase {
 
     private WireMockServer wireMockServer;
     private RequestSpecification requestSpecification;
-    PrintStream printStream;
+    private PrintStream printStream;
 
-    public RequestSpecification setRALogFilter() {
+    public MockBase() {
+        log.info("Starting WireMockServer");
+        turnOffWiremockLogging();
+        if (null == wireMockServer) {
+            wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
+            wireMockServer.start();
+            RestAssured.requestSpecification = getRequestSpecification();
+            log.info("Started WireMockServer at Port: " + wireMockServer.port());
+        } else {
+            log.info("WireMock Server is already running at port " + wireMockServer.port());
+        }
+    }
+
+    public RequestSpecification getRequestSpecification() {
         try {
             printStream = new PrintStream(new FileOutputStream("log/app.log", true));
         } catch (FileNotFoundException e) {
@@ -45,11 +59,12 @@ public class MockBase {
         requestSpecification = new RequestSpecBuilder()
                 .addFilter(RequestLoggingFilter.logRequestTo(printStream))
                 .addFilter(ResponseLoggingFilter.logResponseTo(printStream, LogDetail.ALL))
+                .setPort(wireMockServer.port())
                 .build();
         return requestSpecification;
     }
 
-    public RequestSpecification setPort(){
+    public RequestSpecification setPort() {
         requestSpecification = new RequestSpecBuilder()
                 .setPort(wireMockServer.port())
                 .build();
@@ -79,43 +94,28 @@ public class MockBase {
         return result;
     }
 
-    public void startWireMockServer() {
-        log.info("Starting WireMockServer");
-        if (isPortInUse(null, 8080)) {
+    /*public void startWireMockServer() {
+     *//*if (isPortInUse(null, 8080)) {
             log.info("Port 8080 is Busy");
             wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
         } else {
             wireMockServer = new WireMockServer();
-        }
-        wireMockServer.start();
-        log.info("Started WireMockServer at Port: " + wireMockServer.port());
-    }
+        }*//*
 
-    /*@Test
-    public void test001_dynamicPort() {
-        WireMockServer wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
-        wireMockServer.start();
-        log.info("Started WireMockServer at Port: " + wireMockServer.port());
-        wireMockServer.stubFor(get(urlEqualTo("/some/thing"))
-                .willReturn(aResponse()
-                        .withHeader("Content-Type", "text/plain")
-                        .withBody("Hello World!")));
-        Response response = given().spec(mockBase.setRALogFilter())
-                .port(wireMockServer.port())
-                .when()
-                .get("/some/thing")
-                .then()
-                .extract()
-                .response();
-        Assert.assertEquals(response.getBody().asString(), "Hello World!");
-        wireMockServer.shutdown();
     }*/
 
     public void startWireMockServerOnThisPort(int port) {
+        if (null != wireMockServer) {
+            stopWireMockServer();
+        }
+        startWireMockServerAtPort(port);
+    }
+
+    private void startWireMockServerAtPort(int port) {
+        turnOffWiremockLogging();
         wireMockServer = new WireMockServer(wireMockConfig().port(port));
         wireMockServer.start();
         log.info("WireMock Started on Port: " + wireMockServer.port());
-        //return wireMockServer;
     }
 
     public void stopWireMockServer() {
@@ -163,7 +163,7 @@ public class MockBase {
         log.info("Started WireMock on Port: " + wireMockServer.port());
     }
 
-    public void turnOffWiremockLogging() {
+    private void turnOffWiremockLogging() {
         System.setProperty("org.eclipse.jetty.util.log.class", "org.eclipse.jetty.util.log.StdErrLog");
         //System.setProperty("org.eclipse.jetty.util.log.class", "org.eclipse.jetty.util.log.Log");
         //org.eclipse.jetty.util.log.Log;
@@ -185,7 +185,8 @@ public class MockBase {
         }
     }
 
-    public void removeAllStub() {
+    public void removeResetAllStub() {
+        wireMockServer.resetAll();
         List<StubMapping> stubMappings = wireMockServer.getStubMappings();
         log.info("Total Stub Found: " + stubMappings.size());
         log.info("Removing Stubs...");

@@ -7,11 +7,30 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.BasicCredentials;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import lombok.extern.log4j.Log4j2;
+import org.testng.annotations.Test;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.stubbing.StubImport.stubImport;
 
 @Log4j2
 public class Stubs {
+
+    /*@Test
+    public void test01(){
+        MockBase mockBase = new MockBase();
+        mockBase.startWireMockServer();
+        mockBase.getWireMockServer().importStubs(
+            stubImport()
+                .stub(getStubForBasicAuthHeader(mockBase.getWireMockServer()))
+                //.stub()
+                .ignoreExisting()
+                .deleteAllExistingStubsNotInImport()
+        );
+    }*/
+
+
+
+
 
     public StubMapping getStubForBasicAuthPreemptiveAuthToken(WireMockServer wireMockServer) {
         BasicCredentials basicCredentials = new BasicCredentials("asif", "superSecret");
@@ -70,4 +89,5 @@ public class Stubs {
                         )
         );
     }
+
 }
