@@ -17,7 +17,7 @@ repositories {
 
 dependencies {
     testImplementation group: 'org.testng', name: 'testng', version: '7.1.0'
-    testImplementation 'io.rest-assured:rest-assured:4.3.0'
+    implementation('io.rest-assured:rest-assured:4.3.0')
     testImplementation group: 'com.jayway.jsonpath', name: 'json-path', version: '2.4.0'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.0'
     testImplementation "com.github.tomakehurst:wiremock-jre8:2.26.3"

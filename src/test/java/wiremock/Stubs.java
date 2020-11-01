@@ -28,10 +28,6 @@ public class Stubs {
         );
     }*/
 
-
-
-
-
     public StubMapping getStubForBasicAuthPreemptiveAuthToken(WireMockServer wireMockServer) {
         BasicCredentials basicCredentials = new BasicCredentials("asif", "superSecret");
         String token = basicCredentials.asAuthorizationHeaderValue();

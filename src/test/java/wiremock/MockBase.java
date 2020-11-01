@@ -17,6 +17,7 @@ import org.testng.Assert;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import wiremock.helpers.RestAssuredRequestFilter;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -59,6 +60,8 @@ public class MockBase {
         requestSpecification = new RequestSpecBuilder()
                 .addFilter(RequestLoggingFilter.logRequestTo(printStream))
                 .addFilter(ResponseLoggingFilter.logResponseTo(printStream, LogDetail.ALL))
+                // use below for less verbose
+                // .addFilter(new RestAssuredRequestFilter())
                 .setPort(wireMockServer.port())
                 .build();
         return requestSpecification;
